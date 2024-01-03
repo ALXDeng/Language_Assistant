@@ -19,9 +19,17 @@ const chatSchema = new Schema(
       type: String,
       required: true,
     },
-    description: {
+    language: {
       type: String,
       required: true,
+    },
+    thread_id: {
+      type: String,
+      required: false,
+    },
+    assistant_id: {
+      type: String,
+      required: false,
     },
   },
   { timestamps: true }

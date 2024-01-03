@@ -5,6 +5,8 @@ require("dotenv").config();
 const app = express();
 workoutRoutes = require("./routes/workouts");
 const userRoutes = require("./routes/user");
+const chatRoutes = require("./routes/chat");
+const messageRoutes = require("./routes/message");
 //middleware
 app.use((req, res, next) => {
   console.log(req.path, req.method);
@@ -14,6 +16,8 @@ app.use(express.json());
 //routes
 app.use("/api/workouts", workoutRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/chats", chatRoutes);
+app.use("/api/chats/messages", messageRoutes);
 
 //connect to mongodb
 

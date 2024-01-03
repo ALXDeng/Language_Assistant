@@ -1,7 +1,16 @@
+// import the required dependencies
+require("dotenv").config();
+const OpenAI = require("openai");
+const { assist_dict, intro } = require("../assistant_keys.js");
 const Chat = require("../models/chatModel");
 const Message = require("../models/messageModel");
 const User = require("../models/userModel");
 const mongoose = require("mongoose");
+
+const secretKey = process.env.OPENAI_API_KEY;
+const openai = new OpenAI({
+  apiKey: secretKey,
+});
 
 const getChats = async (req, res) => {
   const user_id = req.user._id;
@@ -10,20 +19,50 @@ const getChats = async (req, res) => {
 };
 
 const createChat = async (req, res) => {
-  const { title } = req.body;
+  console.log("here");
+  const { title, language } = req.body;
 
-  if (!title) {
-    title = "New Lesson";
-  }
-
-  // if (emptyFields.length > 0) {
-  //     return res
-  //         .status(400)
-  //         .json({ error: "Please fill in all fields", emptyFields });
-  // }
   try {
+    //finding appropriate assistant id
+    const assistant_id = assist_dict[language];
+
+    //retrieving the appropriate assistant
+    const assistant = await openai.beta.assistants.retrieve(assistant_id);
+    //error checking
+    if (!assistant) {
+      return res.status(404).json({ error: "Assistant not found" });
+    }
+
+    //creating a new thread
+    const thread = await openai.beta.threads.create();
+    //error checking
+    if (!thread) {
+      return res.status(404).json({ error: "Thread not found" });
+    }
+    //naming the thread
+    thread_id = thread.id;
+
+    //retrieve the user id
     const user_id = req.user._id;
-    const chat = await Chat.create({ title, user_id });
+
+    //creating a chat in the database
+    const chat = await Chat.create({
+      title,
+      language,
+      user_id,
+      thread_id,
+      assistant_id,
+    });
+
+    const message = await Message.create({
+      role: "assistant",
+      content: intro[language],
+    });
+
+    //saving the chat in the database
+    chat.messages.push(message);
+    await chat.save();
+
     res.status(200).json(chat);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -39,7 +78,7 @@ const deleteChat = async (req, res) => {
   res.status(200).json(chat);
 };
 
-const getChatMessages = async (req, res) => {
+const getChat = async (req, res) => {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(404).json({ error: "Chat not found" });
@@ -49,9 +88,8 @@ const getChatMessages = async (req, res) => {
 };
 
 module.exports = {
-  createWorkout,
-  getWorkouts,
-  getWorkout,
-  deleteWorkout,
-  updateWorkout,
+  getChats,
+  createChat,
+  deleteChat,
+  getChat,
 };
