@@ -83,7 +83,9 @@ const getChat = async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(404).json({ error: "Chat not found" });
   }
+
   const chat = await Chat.findById(id).populate("messages");
+  // console.log(chat);
   res.status(200).json(chat);
 };
 
